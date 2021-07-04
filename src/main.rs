@@ -1,5 +1,5 @@
 // https://austinmorlan.com/posts/chip8_emulator/
-// rust implment
+// chip8 emulator rust로 구현하기
 const FONTSET_START_ADDR: u16 = 0x50;
 const START_ADDR: u16 = 0x200;
 const FONTSET: [u8; 80] = [
@@ -23,7 +23,7 @@ const FONTSET: [u8; 80] = [
 
 struct Chip8 {
     registers: [u8; 16], // general registers
-    ir: u16,             // index register
+    ir: u16,             // index register (address register)
     pc: u16,             // program counter
     sp: u8,              // stack pointer
     memory: [u8; 4096],  // 4k memory
