@@ -148,7 +148,7 @@ impl Chip8 {
             Opcode::X3xkk(_) => todo!(),
             Opcode::X4xkk(_) => todo!(),
             Opcode::X5xy0(_) => todo!(),
-            Opcode::X6xkk(op) => self.set((op & 0x0F00 >> 8) as u8, (op & 0x00FF) as u8),
+            Opcode::X6xkk(op) => self.set(((op & 0x0F00) >> 8) as u8, (op & 0x00FF) as u8),
             Opcode::X7xkk(_) => todo!(),
             Opcode::X8xy0(_) => todo!(),
             Opcode::X8xy1(_) => todo!(),
@@ -180,7 +180,10 @@ impl Chip8 {
 }
 
 fn main() {
-    // let mut chip8 = Chip8::new();
+    let mut chip8 = Chip8::new();
+    chip8.memory[0x200] = 0x60;
+    chip8.memory[0x201] = 0x10;
+    chip8.run();
 }
 
 #[cfg(test)]
@@ -193,6 +196,14 @@ mod test {
         chip8.memory[0x201] = 0x10;
         chip8.run();
         assert_eq!(chip8.registers[0], 16);
-        assert_eq!(chip8.pc, START_ADDR + 2);
+    }
+
+    #[test]
+    fn op_6311_v3_equals_17() {
+        let mut chip8 = Chip8::new();
+        chip8.memory[0x200] = 0x63;
+        chip8.memory[0x201] = 0x11;
+        chip8.run();
+        assert_eq!(chip8.registers[3], 17);
     }
 }
