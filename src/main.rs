@@ -21,6 +21,7 @@ const FONTSET: [u8; 80] = [
     0xF0, 0x80, 0xF0, 0x80, 0x80, // F
 ];
 
+#[derive(Debug)]
 struct Chip8 {
     registers: [u8; 16], // general registers
     ir: u16,             // index register (address register)
@@ -35,6 +36,7 @@ struct Chip8 {
     opcode: u8,          // opcode
 }
 
+#[derive(Debug)]
 enum Opcode {
     X00E0,      // CLS -> clear the display
     X00EE,      // RET -> return from a subroutine
@@ -82,7 +84,7 @@ impl Chip8 {
         Chip8 {
             registers: [0x00; 16],
             ir: 0x00,
-            pc: 0x00,
+            pc: START_ADDR,
             sp: 0x00,
             memory,
             stack: [0x00; 16],
@@ -112,6 +114,31 @@ impl Chip8 {
         self.pc = addr;
     }
 
+    fn set(&mut self, vx: u8, byte: u8) {
+        self.registers[vx as usize] = byte;
+    }
+
+    fn read_opcode(&self) -> Opcode {
+        let op_byte1 = self.memory[self.pc as usize] as u16;
+        let op_byte2 = self.memory[(self.pc + 1) as usize] as u16;
+        let opcode = op_byte1 << 8 | op_byte2;
+        let c = ((opcode & 0xF000) >> 12) as u8;
+        let x = ((opcode & 0x0F00) >> 8) as u8;
+        let y = ((opcode & 0x00F0) >> 4) as u8;
+        let d = (opcode & 0x000F) as u8;
+        match (c, x, y, d) {
+            (0, 0, 0, 0) => panic!("done!"),
+            (0x6, _, _, _) => Opcode::X6xkk(opcode & 0x0FFF),
+            (_, _, _, _) => panic!("not implemented!"),
+        }
+    }
+
+    fn run(&mut self) {
+        let opcode = self.read_opcode();
+        self.pc += 2;
+        self.operate(opcode);
+    }
+
     fn operate(&mut self, opcode: Opcode) {
         match opcode {
             Opcode::X00E0 => self.cls(),
@@ -121,7 +148,7 @@ impl Chip8 {
             Opcode::X3xkk(_) => todo!(),
             Opcode::X4xkk(_) => todo!(),
             Opcode::X5xy0(_) => todo!(),
-            Opcode::X6xkk(_) => todo!(),
+            Opcode::X6xkk(op) => self.set((op & 0x0F00 >> 8) as u8, (op & 0x00FF) as u8),
             Opcode::X7xkk(_) => todo!(),
             Opcode::X8xy0(_) => todo!(),
             Opcode::X8xy1(_) => todo!(),
@@ -153,5 +180,19 @@ impl Chip8 {
 }
 
 fn main() {
-    let mut chip8 = Chip8::new();
+    // let mut chip8 = Chip8::new();
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    #[test]
+    fn op_6010_v0_equals_16() {
+        let mut chip8 = Chip8::new();
+        chip8.memory[0x200] = 0x60;
+        chip8.memory[0x201] = 0x10;
+        chip8.run();
+        assert_eq!(chip8.registers[0], 16);
+        assert_eq!(chip8.pc, START_ADDR + 2);
+    }
 }
