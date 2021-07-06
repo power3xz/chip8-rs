@@ -72,6 +72,7 @@ enum Opcode {
     XFx33(u16), // LD B, Vx -> Store BCD representation of Vx in memory locations I, I+1, and I+2
     XFx55(u16), // LD [I], Vx -> Store registers V0 through Vx in memory starting at location I
     XFx65(u16), // LD Vx, [I] -> Read registers V0 through Vx from memory starting at location I
+    X0000,      // continue
 }
 
 impl Chip8 {
@@ -104,7 +105,7 @@ impl Chip8 {
         self.pc = self.stack[self.sp as usize];
     }
 
-    fn jp(&mut self, addr: u16) {
+    fn jump(&mut self, addr: u16) {
         self.pc = addr;
     }
 
@@ -118,6 +119,10 @@ impl Chip8 {
         self.registers[vx as usize] = byte;
     }
 
+    fn add(&mut self, vx: u8, byte: u8) {
+        self.registers[vx as usize] += byte;
+    }
+
     fn read_opcode(&self) -> Opcode {
         let op_byte1 = self.memory[self.pc as usize] as u16;
         let op_byte2 = self.memory[(self.pc + 1) as usize] as u16;
@@ -127,29 +132,35 @@ impl Chip8 {
         let y = ((opcode & 0x00F0) >> 4) as u8;
         let d = (opcode & 0x000F) as u8;
         match (c, x, y, d) {
-            (0, 0, 0, 0) => panic!("done!"),
+            (0, 0, 0, 0) => Opcode::X0000,
             (0x6, _, _, _) => Opcode::X6xkk(opcode & 0x0FFF),
+            (0x7, _, _, _) => Opcode::X7xkk(opcode & 0x0FFF),
             (_, _, _, _) => panic!("not implemented!"),
         }
     }
 
     fn run(&mut self) {
-        let opcode = self.read_opcode();
-        self.pc += 2;
-        self.operate(opcode);
+        loop {
+            let opcode = self.read_opcode();
+            self.pc += 2;
+            self.operate(opcode);
+            if self.pc >= 4096 {
+                break;
+            }
+        }
     }
 
     fn operate(&mut self, opcode: Opcode) {
         match opcode {
             Opcode::X00E0 => self.cls(),
             Opcode::X00EE => self.ret(),
-            Opcode::X1nnn(op) => self.jp(op & 0x0FFF),
+            Opcode::X1nnn(op) => self.jump(op & 0x0FFF),
             Opcode::X2nnn(op) => self.call(op & 0x0FFF),
             Opcode::X3xkk(_) => todo!(),
             Opcode::X4xkk(_) => todo!(),
             Opcode::X5xy0(_) => todo!(),
             Opcode::X6xkk(op) => self.set(((op & 0x0F00) >> 8) as u8, (op & 0x00FF) as u8),
-            Opcode::X7xkk(_) => todo!(),
+            Opcode::X7xkk(op) => self.add(((op & 0x0F00) >> 8) as u8, (op & 0x00FF) as u8),
             Opcode::X8xy0(_) => todo!(),
             Opcode::X8xy1(_) => todo!(),
             Opcode::X8xy2(_) => todo!(),
@@ -175,6 +186,7 @@ impl Chip8 {
             Opcode::XFx33(_) => todo!(),
             Opcode::XFx55(_) => todo!(),
             Opcode::XFx65(_) => todo!(),
+            Opcode::X0000 => (),
         }
     }
 }
@@ -205,5 +217,16 @@ mod test {
         chip8.memory[0x201] = 0x11;
         chip8.run();
         assert_eq!(chip8.registers[3], 17);
+    }
+
+    #[test]
+    fn op_6310_7311_v3_equals_33() {
+        let mut chip8 = Chip8::new();
+        chip8.memory[0x200] = 0x63;
+        chip8.memory[0x201] = 0x10;
+        chip8.memory[0x202] = 0x73;
+        chip8.memory[0x203] = 0x11;
+        chip8.run();
+        assert_eq!(chip8.registers[3], 33);
     }
 }
