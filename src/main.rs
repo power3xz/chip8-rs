@@ -119,9 +119,13 @@ impl Chip8 {
         self.registers[vx as usize] = byte;
     }
 
-    fn setxy(&mut self, vx: u8, vy: u8) {
-        println!("{}, {}", vx, vy);
+    fn sety(&mut self, vx: u8, vy: u8) {
         self.registers[vx as usize] = self.registers[vy as usize];
+    }
+
+    fn or(&mut self, vx: u8, vy: u8) {
+        println!("{}, {}", vx, vy);
+        self.registers[vx as usize] |= self.registers[vy as usize];
     }
 
     fn add(&mut self, vx: u8, byte: u8) {
@@ -141,6 +145,7 @@ impl Chip8 {
             (0x6, _, _, _) => Opcode::X6xkk(x, (y << 4) | d),
             (0x7, _, _, _) => Opcode::X7xkk(x, (y << 4) | d),
             (0x8, _, _, 0x0) => Opcode::X8xy0(x, y),
+            (0x8, _, _, 0x1) => Opcode::X8xy1(x, y),
             (_, _, _, _) => panic!("not implemented!"),
         }
     }
@@ -167,8 +172,8 @@ impl Chip8 {
             Opcode::X5xy0(_, _) => todo!(),
             Opcode::X6xkk(vx, byte) => self.set(vx, byte),
             Opcode::X7xkk(vx, byte) => self.add(vx, byte),
-            Opcode::X8xy0(vx, vy) => self.setxy(vx, vy),
-            Opcode::X8xy1(_, _) => todo!(),
+            Opcode::X8xy0(vx, vy) => self.sety(vx, vy),
+            Opcode::X8xy1(vx, vy) => self.or(vx, vy),
             Opcode::X8xy2(_, _) => todo!(),
             Opcode::X8xy3(_, _) => todo!(),
             Opcode::X8xy4(_, _) => todo!(),
@@ -237,19 +242,19 @@ mod test {
     }
 
     #[test]
-    fn op_6310_6208_8320_v3_equals_8() {
+    fn op_6310_6201_8301_v3_equals_17() {
         let mut chip8 = Chip8::new();
         // 6310
         chip8.memory[0x200] = 0x63;
         chip8.memory[0x201] = 0x10;
-        // 6280
+        // 6201
         chip8.memory[0x202] = 0x62;
-        chip8.memory[0x203] = 0x08;
-        // 8320
+        chip8.memory[0x203] = 0x01;
+        // 8321
         chip8.memory[0x204] = 0x83;
-        chip8.memory[0x205] = 0x20;
+        chip8.memory[0x205] = 0x21;
 
         chip8.run();
-        assert_eq!(chip8.registers[3], 8);
+        assert_eq!(chip8.registers[3], 17);
     }
 }
