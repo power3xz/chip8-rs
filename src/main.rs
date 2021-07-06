@@ -247,8 +247,10 @@ mod test {
     #[test]
     fn op_6010_v0_equals_16() {
         let mut chip8 = Chip8::new();
+
         chip8.memory[0x200] = 0x60;
         chip8.memory[0x201] = 0x10;
+
         chip8.run();
         assert_eq!(chip8.registers[0], 16);
     }
@@ -256,8 +258,10 @@ mod test {
     #[test]
     fn op_6311_v3_equals_17() {
         let mut chip8 = Chip8::new();
+
         chip8.memory[0x200] = 0x63;
         chip8.memory[0x201] = 0x11;
+
         chip8.run();
         assert_eq!(chip8.registers[3], 17);
     }
@@ -265,10 +269,13 @@ mod test {
     #[test]
     fn op_6310_7311_v3_equals_33() {
         let mut chip8 = Chip8::new();
+
         chip8.memory[0x200] = 0x63;
         chip8.memory[0x201] = 0x10;
+
         chip8.memory[0x202] = 0x73;
         chip8.memory[0x203] = 0x11;
+
         chip8.run();
         assert_eq!(chip8.registers[3], 33);
     }
@@ -276,13 +283,13 @@ mod test {
     #[test]
     fn op_6310_6201_8321_v3_equals_17() {
         let mut chip8 = Chip8::new();
-        // 6310
+
         chip8.memory[0x200] = 0x63;
         chip8.memory[0x201] = 0x10;
-        // 6201
+
         chip8.memory[0x202] = 0x62;
         chip8.memory[0x203] = 0x01;
-        // 8321
+
         chip8.memory[0x204] = 0x83;
         chip8.memory[0x205] = 0x21;
 
@@ -293,13 +300,13 @@ mod test {
     #[test]
     fn op_6310_6211_8322_v3_equals_16() {
         let mut chip8 = Chip8::new();
-        // 6310
+
         chip8.memory[0x200] = 0x63;
         chip8.memory[0x201] = 0x10;
-        // 6211
+
         chip8.memory[0x202] = 0x62;
         chip8.memory[0x203] = 0x11;
-        // 8322
+
         chip8.memory[0x204] = 0x83;
         chip8.memory[0x205] = 0x22;
 
@@ -310,13 +317,13 @@ mod test {
     #[test]
     fn op_6310_6211_8323_v3_equals_1() {
         let mut chip8 = Chip8::new();
-        // 6310
+
         chip8.memory[0x200] = 0x63;
         chip8.memory[0x201] = 0x10;
-        // 6211
+
         chip8.memory[0x202] = 0x62;
         chip8.memory[0x203] = 0x11;
-        // 8322
+
         chip8.memory[0x204] = 0x83;
         chip8.memory[0x205] = 0x23;
 
@@ -327,13 +334,13 @@ mod test {
     #[test]
     fn op_63ff_6202_8324_v3_equals_1_vf_equals_1() {
         let mut chip8 = Chip8::new();
-        // 63FF
+
         chip8.memory[0x200] = 0x63;
         chip8.memory[0x201] = 0xFF;
-        // 6201
+
         chip8.memory[0x202] = 0x62;
         chip8.memory[0x203] = 0x02;
-        // 8324
+
         chip8.memory[0x204] = 0x83;
         chip8.memory[0x205] = 0x24;
 
@@ -345,13 +352,13 @@ mod test {
     #[test]
     fn op_63ff_62fe_8325_v3_equals_1() {
         let mut chip8 = Chip8::new();
-        // 63FF
+
         chip8.memory[0x200] = 0x63;
         chip8.memory[0x201] = 0xFF;
-        // 6201
+
         chip8.memory[0x202] = 0x62;
         chip8.memory[0x203] = 0xfe;
-        // 8324
+
         chip8.memory[0x204] = 0x83;
         chip8.memory[0x205] = 0x25;
 
