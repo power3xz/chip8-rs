@@ -136,7 +136,8 @@ impl Chip8 {
     }
 
     fn add(&mut self, vx: u8, byte: u8) {
-        self.registers[vx as usize] += byte;
+        let (result, _) = self.registers[vx as usize].overflowing_add(byte);
+        self.registers[vx as usize] = result;
     }
 
     fn read_opcode(&self) -> Opcode {
