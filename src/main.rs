@@ -38,28 +38,28 @@ struct Chip8 {
 
 #[derive(Debug)]
 enum Opcode {
-    X00E0,      // CLS -> clear the display
-    X00EE,      // RET -> return from a subroutine
-    X1nnn(u16), // JP addr -> jump to location nnn
-    X2nnn(u16), // CALL addr -> call subroutine at nnn
-    X3xkk(u16), // SE Vx, byte -> skip next instruction if Vx = kk
-    X4xkk(u16), // SE Vx, byte -> skip next instruction if Vx != kk
-    X5xy0(u16), // SE Vx, Vy -> skip next instruction if Vx = Vy
-    X6xkk(u16), // LD Vx, byte -> Set Vx = kk
-    X7xkk(u16), // ADD Vx, byte -> Set Vx = Vx + kk
-    X8xy0(u16), // LD Vx, Vy -> Set Vx = Vy
-    X8xy1(u16), // OR Vx, Vy -> Set Vx = Vx OR Vy
-    X8xy2(u16), // AND Vx, Vy -> Set Vx = Vx AND Vy
-    X8xy3(u16), // XOR Vx, Vy -> Set Vx = Vx XOR Vy
-    X8xy4(u16), // ADD Vx, Vy -> Set Vx = Vx + Vy, set VF = carry (if Vx + Vy > 255 then 1 else 0)
-    X8xy5(u16), // SUB Vx, Vy -> Set Vx = Vx - Vy, set VF = Not borrow (if Vx > Vy then 1 else 0)
-    X8xy6(u16), // SHR Vx -> Set Vx = Vx SHR 1
-    X8xy7(u16), // SUBN Vx, Vy -> Set Vx = Vy - Vx, set VF = Not borrow (if Vy > Vx then 1 else 0)
-    X8xyE(u16), // SHL Vx {, Vy} -> Set Vx = Vx SHL 1
-    X9xy0(u16), // SNE Vx, Vy -> skip next instruction if Vx != Vy
-    XAnnn(u16), // LD I, addr -> Set I = nnn
-    XBnnn(u16), // JP V0, addr -> Jump to location nnn + v0
-    XCxkk(u16), // RND Vx, byte -> Set Vx = random byte AND kk
+    X00E0,         // CLS -> clear the display
+    X00EE,         // RET -> return from a subroutine
+    X1nnn(u16),    // JP addr -> jump to location nnn
+    X2nnn(u16),    // CALL addr -> call subroutine at nnn
+    X3xkk(u8, u8), // SE Vx, byte -> skip next instruction if Vx = kk
+    X4xkk(u8, u8), // SE Vx, byte -> skip next instruction if Vx != kk
+    X5xy0(u8, u8), // SE Vx, Vy -> skip next instruction if Vx = Vy
+    X6xkk(u8, u8), // LD Vx, byte -> Set Vx = kk
+    X7xkk(u8, u8), // ADD Vx, byte -> Set Vx = Vx + kk
+    X8xy0(u8, u8), // LD Vx, Vy -> Set Vx = Vy
+    X8xy1(u8, u8), // OR Vx, Vy -> Set Vx = Vx OR Vy
+    X8xy2(u8, u8), // AND Vx, Vy -> Set Vx = Vx AND Vy
+    X8xy3(u8, u8), // XOR Vx, Vy -> Set Vx = Vx XOR Vy
+    X8xy4(u8, u8), // ADD Vx, Vy -> Set Vx = Vx + Vy, set VF = carry (if Vx + Vy > 255 then 1 else 0)
+    X8xy5(u8, u8), // SUB Vx, Vy -> Set Vx = Vx - Vy, set VF = Not borrow (if Vx > Vy then 1 else 0)
+    X8xy6(u8, u8), // SHR Vx -> Set Vx = Vx SHR 1
+    X8xy7(u8, u8), // SUBN Vx, Vy -> Set Vx = Vy - Vx, set VF = Not borrow (if Vy > Vx then 1 else 0)
+    X8xyE(u16),    // SHL Vx {, Vy} -> Set Vx = Vx SHL 1
+    X9xy0(u16),    // SNE Vx, Vy -> skip next instruction if Vx != Vy
+    XAnnn(u16),    // LD I, addr -> Set I = nnn
+    XBnnn(u16),    // JP V0, addr -> Jump to location nnn + v0
+    XCxkk(u16),    // RND Vx, byte -> Set Vx = random byte AND kk
     XDxyn(u16), // DRW Vx, Vy, nibble -> Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision
     XEx9E(u16), // SKP Vx -> Skip next instruction if key with the value of Vx is pressed
     XExA1(u16), // SKNP Vx -> Skip next instruction if key with the value of Vx if not pressed
@@ -119,6 +119,11 @@ impl Chip8 {
         self.registers[vx as usize] = byte;
     }
 
+    fn setxy(&mut self, vx: u8, vy: u8) {
+        println!("{}, {}", vx, vy);
+        self.registers[vx as usize] = self.registers[vy as usize];
+    }
+
     fn add(&mut self, vx: u8, byte: u8) {
         self.registers[vx as usize] += byte;
     }
@@ -133,8 +138,16 @@ impl Chip8 {
         let d = (opcode & 0x000F) as u8;
         match (c, x, y, d) {
             (0, 0, 0, 0) => Opcode::X0000,
-            (0x6, _, _, _) => Opcode::X6xkk(opcode & 0x0FFF),
-            (0x7, _, _, _) => Opcode::X7xkk(opcode & 0x0FFF),
+            (0x6, _, _, _) => {
+                Opcode::X6xkk(((opcode & 0x0F00) >> 8) as u8, (opcode & 0x00FF) as u8)
+            }
+            (0x7, _, _, _) => {
+                Opcode::X7xkk(((opcode & 0x0F00) >> 8) as u8, (opcode & 0x00FF) as u8)
+            }
+            (0x8, _, _, 0x0) => Opcode::X8xy0(
+                ((opcode & 0x0F00) >> 8) as u8,
+                ((opcode & 0x00F0) >> 4) as u8,
+            ),
             (_, _, _, _) => panic!("not implemented!"),
         }
     }
@@ -156,19 +169,19 @@ impl Chip8 {
             Opcode::X00EE => self.ret(),
             Opcode::X1nnn(op) => self.jump(op & 0x0FFF),
             Opcode::X2nnn(op) => self.call(op & 0x0FFF),
-            Opcode::X3xkk(_) => todo!(),
-            Opcode::X4xkk(_) => todo!(),
-            Opcode::X5xy0(_) => todo!(),
-            Opcode::X6xkk(op) => self.set(((op & 0x0F00) >> 8) as u8, (op & 0x00FF) as u8),
-            Opcode::X7xkk(op) => self.add(((op & 0x0F00) >> 8) as u8, (op & 0x00FF) as u8),
-            Opcode::X8xy0(_) => todo!(),
-            Opcode::X8xy1(_) => todo!(),
-            Opcode::X8xy2(_) => todo!(),
-            Opcode::X8xy3(_) => todo!(),
-            Opcode::X8xy4(_) => todo!(),
-            Opcode::X8xy5(_) => todo!(),
-            Opcode::X8xy6(_) => todo!(),
-            Opcode::X8xy7(_) => todo!(),
+            Opcode::X3xkk(_, _) => todo!(),
+            Opcode::X4xkk(_, _) => todo!(),
+            Opcode::X5xy0(_, _) => todo!(),
+            Opcode::X6xkk(vx, byte) => self.set(vx, byte),
+            Opcode::X7xkk(vx, byte) => self.add(vx, byte),
+            Opcode::X8xy0(vx, vy) => self.setxy(vx, vy),
+            Opcode::X8xy1(_, _) => todo!(),
+            Opcode::X8xy2(_, _) => todo!(),
+            Opcode::X8xy3(_, _) => todo!(),
+            Opcode::X8xy4(_, _) => todo!(),
+            Opcode::X8xy5(_, _) => todo!(),
+            Opcode::X8xy6(_, _) => todo!(),
+            Opcode::X8xy7(_, _) => todo!(),
             Opcode::X8xyE(_) => todo!(),
             Opcode::X9xy0(_) => todo!(),
             Opcode::XAnnn(_) => todo!(),
@@ -228,5 +241,22 @@ mod test {
         chip8.memory[0x203] = 0x11;
         chip8.run();
         assert_eq!(chip8.registers[3], 33);
+    }
+
+    #[test]
+    fn op_6310_6208_8320_v3_equals_8() {
+        let mut chip8 = Chip8::new();
+        // 6310
+        chip8.memory[0x200] = 0x63;
+        chip8.memory[0x201] = 0x10;
+        // 6280
+        chip8.memory[0x202] = 0x62;
+        chip8.memory[0x203] = 0x08;
+        // 8320
+        chip8.memory[0x204] = 0x83;
+        chip8.memory[0x205] = 0x20;
+
+        chip8.run();
+        assert_eq!(chip8.registers[3], 8);
     }
 }
