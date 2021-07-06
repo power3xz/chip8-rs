@@ -137,17 +137,10 @@ impl Chip8 {
         let y = ((opcode & 0x00F0) >> 4) as u8;
         let d = (opcode & 0x000F) as u8;
         match (c, x, y, d) {
-            (0, 0, 0, 0) => Opcode::X0000,
-            (0x6, _, _, _) => {
-                Opcode::X6xkk(((opcode & 0x0F00) >> 8) as u8, (opcode & 0x00FF) as u8)
-            }
-            (0x7, _, _, _) => {
-                Opcode::X7xkk(((opcode & 0x0F00) >> 8) as u8, (opcode & 0x00FF) as u8)
-            }
-            (0x8, _, _, 0x0) => Opcode::X8xy0(
-                ((opcode & 0x0F00) >> 8) as u8,
-                ((opcode & 0x00F0) >> 4) as u8,
-            ),
+            (0x0, 0x0, 0x0, 0x0) => Opcode::X0000,
+            (0x6, _, _, _) => Opcode::X6xkk(x, (y << 4) | d),
+            (0x7, _, _, _) => Opcode::X7xkk(x, (y << 4) | d),
+            (0x8, _, _, 0x0) => Opcode::X8xy0(x, y),
             (_, _, _, _) => panic!("not implemented!"),
         }
     }
