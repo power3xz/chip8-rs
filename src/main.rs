@@ -140,6 +140,16 @@ impl Chip8 {
         self.registers[vx as usize] = result;
     }
 
+    fn addyc(&mut self, vx: u8, vy: u8) {
+        let (result, overflowed) =
+            self.registers[vx as usize].overflowing_add(self.registers[vy as usize]);
+        self.registers[vx as usize] = result;
+        self.registers[0xF] = match overflowed {
+            true => 1,
+            false => 0,
+        };
+    }
+
     fn read_opcode(&self) -> Opcode {
         let op_byte1 = self.memory[self.pc as usize] as u16;
         let op_byte2 = self.memory[(self.pc + 1) as usize] as u16;
@@ -156,6 +166,7 @@ impl Chip8 {
             (0x8, _, _, 0x1) => Opcode::X8xy1(x, y),
             (0x8, _, _, 0x2) => Opcode::X8xy2(x, y),
             (0x8, _, _, 0x3) => Opcode::X8xy3(x, y),
+            (0x8, _, _, 0x4) => Opcode::X8xy4(x, y),
             (_, _, _, _) => panic!("not implemented!"),
         }
     }
@@ -186,7 +197,7 @@ impl Chip8 {
             Opcode::X8xy1(vx, vy) => self.ory(vx, vy),
             Opcode::X8xy2(vx, vy) => self.andy(vx, vy),
             Opcode::X8xy3(vx, vy) => self.xory(vx, vy),
-            Opcode::X8xy4(_, _) => todo!(),
+            Opcode::X8xy4(vx, vy) => self.addyc(vx, vy),
             Opcode::X8xy5(_, _) => todo!(),
             Opcode::X8xy6(_, _) => todo!(),
             Opcode::X8xy7(_, _) => todo!(),
@@ -300,5 +311,23 @@ mod test {
 
         chip8.run();
         assert_eq!(chip8.registers[3], 1);
+    }
+
+    #[test]
+    fn op_63ff_6202_8324_v3_equals_1_vf_equals_1() {
+        let mut chip8 = Chip8::new();
+        // 63FF
+        chip8.memory[0x200] = 0x63;
+        chip8.memory[0x201] = 0xFF;
+        // 6201
+        chip8.memory[0x202] = 0x62;
+        chip8.memory[0x203] = 0x02;
+        // 8324
+        chip8.memory[0x204] = 0x83;
+        chip8.memory[0x205] = 0x24;
+
+        chip8.run();
+        assert_eq!(chip8.registers[3], 1);
+        assert_eq!(chip8.registers[0xF], 1);
     }
 }
