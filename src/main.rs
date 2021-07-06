@@ -123,15 +123,15 @@ impl Chip8 {
         self.registers[vx as usize] = self.registers[vy as usize];
     }
 
-    fn or(&mut self, vx: u8, vy: u8) {
+    fn ory(&mut self, vx: u8, vy: u8) {
         self.registers[vx as usize] |= self.registers[vy as usize];
     }
 
-    fn and(&mut self, vx: u8, vy: u8) {
+    fn andy(&mut self, vx: u8, vy: u8) {
         self.registers[vx as usize] &= self.registers[vy as usize];
     }
 
-    fn xor(&mut self, vx: u8, vy: u8) {
+    fn xory(&mut self, vx: u8, vy: u8) {
         self.registers[vx as usize] ^= self.registers[vy as usize];
     }
 
@@ -183,9 +183,9 @@ impl Chip8 {
             Opcode::X6xkk(vx, byte) => self.set(vx, byte),
             Opcode::X7xkk(vx, byte) => self.add(vx, byte),
             Opcode::X8xy0(vx, vy) => self.sety(vx, vy),
-            Opcode::X8xy1(vx, vy) => self.or(vx, vy),
-            Opcode::X8xy2(vx, vy) => self.and(vx, vy),
-            Opcode::X8xy3(vx, vy) => self.xor(vx, vy),
+            Opcode::X8xy1(vx, vy) => self.ory(vx, vy),
+            Opcode::X8xy2(vx, vy) => self.andy(vx, vy),
+            Opcode::X8xy3(vx, vy) => self.xory(vx, vy),
             Opcode::X8xy4(_, _) => todo!(),
             Opcode::X8xy5(_, _) => todo!(),
             Opcode::X8xy6(_, _) => todo!(),
