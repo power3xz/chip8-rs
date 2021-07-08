@@ -160,6 +160,11 @@ impl Chip8 {
         };
     }
 
+    fn shr(&mut self, vx: u8) {
+        self.registers[0xF] = self.registers[vx as usize] & 0x1;
+        self.registers[vx as usize] >>= 1;
+    }
+
     fn read_opcode(&self) -> Opcode {
         let op_byte1 = self.memory[self.pc as usize] as u16;
         let op_byte2 = self.memory[(self.pc + 1) as usize] as u16;
@@ -178,6 +183,7 @@ impl Chip8 {
             (0x8, _, _, 0x3) => Opcode::X8xy3(x, y),
             (0x8, _, _, 0x4) => Opcode::X8xy4(x, y),
             (0x8, _, _, 0x5) => Opcode::X8xy5(x, y),
+            (0x8, _, _, 0x6) => Opcode::X8xy6(x, y),
             (_, _, _, _) => panic!("not implemented!"),
         }
     }
@@ -210,7 +216,7 @@ impl Chip8 {
             Opcode::X8xy3(vx, vy) => self.xory(vx, vy),
             Opcode::X8xy4(vx, vy) => self.addyc(vx, vy),
             Opcode::X8xy5(vx, vy) => self.subyc(vx, vy),
-            Opcode::X8xy6(_, _) => todo!(),
+            Opcode::X8xy6(vx, _) => self.shr(vx),
             Opcode::X8xy7(_, _) => todo!(),
             Opcode::X8xyE(_) => todo!(),
             Opcode::X9xy0(_) => todo!(),
@@ -364,5 +370,20 @@ mod test {
 
         chip8.run();
         assert_eq!(chip8.registers[3], 1);
+    }
+
+    #[test]
+    fn op_6011_8006_v0_equals_8_vf_equals_1() {
+        let mut chip8 = Chip8::new();
+
+        chip8.memory[0x200] = 0x60;
+        chip8.memory[0x201] = 0x11;
+
+        chip8.memory[0x202] = 0x80;
+        chip8.memory[0x203] = 0x06;
+
+        chip8.run();
+        assert_eq!(chip8.registers[0], 8);
+        assert_eq!(chip8.registers[0xf], 1);
     }
 }
