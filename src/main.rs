@@ -56,7 +56,7 @@ enum Opcode {
     X8xy6(u8, u8), // SHR Vx -> Set Vx = Vx SHR 1
     X8xy7(u8, u8), // SUBN Vx, Vy -> Set Vx = Vy - Vx, set VF = Not borrow (if Vy > Vx then 1 else 0)
     X8xyE(u8, u8), // SHL Vx {, Vy} -> Set Vx = Vx SHL 1
-    X9xy0(u16),    // SNE Vx, Vy -> skip next instruction if Vx != Vy
+    X9xy0(u8, u8), // SNE Vx, Vy -> skip next instruction if Vx != Vy
     XAnnn(u16),    // LD I, addr -> Set I = nnn
     XBnnn(u16),    // JP V0, addr -> Jump to location nnn + v0
     XCxkk(u16),    // RND Vx, byte -> Set Vx = random byte AND kk
@@ -180,6 +180,12 @@ impl Chip8 {
         self.registers[vx as usize] <<= 1;
     }
 
+    fn sne(&mut self, vx: u8, vy: u8) {
+        if self.registers[vx as usize] != self.registers[vy as usize] {
+            self.pc += 2;
+        }
+    }
+
     fn read_opcode(&self) -> Opcode {
         let op_byte1 = self.memory[self.pc as usize] as u16;
         let op_byte2 = self.memory[(self.pc + 1) as usize] as u16;
@@ -201,6 +207,7 @@ impl Chip8 {
             (0x8, _, _, 0x6) => Opcode::X8xy6(x, y),
             (0x8, _, _, 0x7) => Opcode::X8xy7(x, y),
             (0x8, _, _, 0xE) => Opcode::X8xyE(x, y),
+            (0x9, _, _, 0x0) => Opcode::X9xy0(x, y),
             (_, _, _, _) => panic!("not implemented!"),
         }
     }
@@ -236,7 +243,7 @@ impl Chip8 {
             Opcode::X8xy6(vx, _) => self.shr(vx),
             Opcode::X8xy7(vx, vy) => self.subxc(vx, vy),
             Opcode::X8xyE(vx, _) => self.shl(vx),
-            Opcode::X9xy0(_) => todo!(),
+            Opcode::X9xy0(vx, vy) => self.sne(vx, vy),
             Opcode::XAnnn(_) => todo!(),
             Opcode::XBnnn(_) => todo!(),
             Opcode::XCxkk(_) => todo!(),
@@ -429,8 +436,8 @@ mod test {
         chip8.memory[0x200] = 0x60;
         chip8.memory[0x201] = 0x81;
 
-        chip8.memory[0x204] = 0x80;
-        chip8.memory[0x205] = 0x0E;
+        chip8.memory[0x202] = 0x80;
+        chip8.memory[0x203] = 0x0E;
 
         chip8.run();
         assert_eq!(chip8.registers[0], 2);
